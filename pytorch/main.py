@@ -22,7 +22,7 @@ import numpy as np
 from torch.utils.data import DataLoader
 from util import cal_loss, IOStream
 import sklearn.metrics as metrics
-
+import gc
 
 def _init_():
     if not os.path.exists('checkpoints'):
@@ -101,7 +101,8 @@ def train(args, io):
                                                                                  metrics.balanced_accuracy_score(
                                                                                      train_true, train_pred))
         io.cprint(outstr)
-
+        gc.collect()
+        torch.cuda.empty_cache()
         ####################
         # Test
         ####################
@@ -133,7 +134,8 @@ def train(args, io):
         if test_acc >= best_test_acc:
             best_test_acc = test_acc
             torch.save(model.state_dict(), 'checkpoints/%s/models/model.t7' % args.exp_name)
-
+        gc.collect()
+        torch.cuda.empty_cache()
 
 def test(args, io):
     test_loader = DataLoader(ModelNet40(partition='test', num_points=args.num_points),
@@ -142,7 +144,12 @@ def test(args, io):
     device = torch.device("cuda" if args.cuda else "cpu")
 
     #Try to load models
-    model = DGCNN(args).to(device)
+    if args.model == 'pointnet':
+        model = PointNet(args).to(device)
+    elif args.model == 'dgcnn':
+        model = DGCNN(args).to(device)
+    else:
+        raise Exception("Not implemented")
     model = nn.DataParallel(model)
     model.load_state_dict(torch.load(args.model_path))
     model = model.eval()
