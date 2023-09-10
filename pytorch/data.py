@@ -80,8 +80,8 @@ class ModelNet40(Dataset):
 
 
 if __name__ == '__main__':
-    train = ModelNet40(100)
-    test = ModelNet40(100, 'test')
+    train = ModelNet40(50)
+    test = ModelNet40(50, 'test')
     for data, label in train:
         print(data.shape)
         print(label.shape)
